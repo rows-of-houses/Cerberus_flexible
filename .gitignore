@@ -42,3 +42,4 @@ bags/*
 output/*
 
 *.ipynb
+src/codegen/shared
