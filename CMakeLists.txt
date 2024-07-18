@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(vilo)
-
 set(CMAKE_BUILD_TYPE "Release")
 #set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_CXX_FLAGS "-std=c++14")
 #-DEIGEN_USE_MKL_ALL")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
+
+# add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp
@@ -27,7 +28,10 @@ find_package(OpenCV REQUIRED)
 find_package(Ceres REQUIRED)
 #message(WARNING "CERES_LIBRARIES: ${CERES_LIBRARIES}")
 
-include_directories(${catkin_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS})
+# search for casadi in the environment
+find_package(casadi REQUIRED) 
+
+include_directories(${catkin_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS} ${CASADI_INCLUDE_DIR})
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(Eigen3)
@@ -35,8 +39,6 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIR}
 )
-# search for casadi in the environment
-find_package(casadi REQUIRED) 
 
 # Find the savitzky golay filter package and all its dependencies 
 find_package(gram_savitzky_golay REQUIRED)
@@ -72,7 +74,7 @@ add_library(vilo_lib
 # kf subdirectory
 add_subdirectory(src/kalmanFilter)
 
-target_link_libraries(vilo_lib ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
+target_link_libraries(vilo_lib ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES} casadi)
 
 add_executable(vilo src/main.cpp )
 target_link_libraries(vilo 
@@ -83,6 +85,6 @@ target_link_libraries(vilo
 )
 
 
-add_executable(ceres_test src/test/ceres_test.cpp src/legKinematics/A1Kinematics.cpp)
-target_link_libraries(ceres_test ${CERES_LIBRARIES} ${OpenCV_LIBS})
+# add_executable(ceres_test src/test/ceres_test.cpp src/legKinematics/A1Kinematics.cpp)
+# target_link_libraries(ceres_test ${CERES_LIBRARIES} ${OpenCV_LIBS})
 
