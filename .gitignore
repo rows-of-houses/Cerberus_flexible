@@ -41,4 +41,4 @@ build/
 bags/*
 output/*
 
-.ipynb
+*.ipynb
