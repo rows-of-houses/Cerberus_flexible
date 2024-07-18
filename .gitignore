@@ -40,3 +40,5 @@ build/
 
 bags/*
 output/*
+
+.ipynb
