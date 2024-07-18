@@ -3,6 +3,8 @@
 //
 
 #include "imu_leg_integration_base.h"
+#include <iostream>
+
 
 IMULegIntegrationBase::IMULegIntegrationBase(const Vector3d &_acc_0, const Vector3d &_gyr_0, const Ref<const Vector_dof> &_phi_0,
                                              const Ref<const Vector_dof> &_dphi_0, const Ref<const Vector_leg> &_c_0,
@@ -227,24 +229,47 @@ void IMULegIntegrationBase::midPointIntegration(double _dt, const Vector3d &_acc
             }
         }
     }
+    
+
+
+
+
+    // WORKS
+    // std::vector<double> _phi_0_vec;
+    // _phi_0_vec.resize(_phi_0.size());
+    // Eigen::Matrix<double, NUM_OF_DOF, 1>::Map(&_phi_0_vec[0], _phi_0.size()) = _phi_0;
+
+    // std::vector<double> linearized_rho_vec;mtx
+    // linearized_rho_vec.resize(linearized_rho.size());
+    // Eigen::Matrix<double, NUM_OF_LEG, 1>::Map(&linearized_rho_vec[0], linearized_rho.size()) = linearized_rho;
+
+    // std::vector<casadi::DM> arg = {casadi::DM(_phi_0_vec), casadi::DM(linearized_rho_vec)};
+    // auto fk_gen_value = a1_kin.fk_gen(arg);
+
+
+    auto mine_res = a1_kin.fk_mine(_phi_0, linearized_rho);
+    std::cout << mine_res << std::endl << std::endl << std::endl;
 
     // get velocity measurement
-    for (int j = 0; j < NUM_OF_LEG; j++)
-    {
-        // calculate fk of each leg
-        fi.push_back(a1_kin.fk(_phi_0.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
-        fip1.push_back(a1_kin.fk(_phi_1.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
-        // calculate jacobian of each leg
-        Ji.push_back(a1_kin.jac(_phi_0.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
-        Jip1.push_back(a1_kin.jac(_phi_1.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
+    // for (int j = 0; j < NUM_OF_LEG; j++)
+    // {
+    //     // calculate fk of each leg
+    //     fi.push_back(a1_kin.fk(_phi_0.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
+    //     fip1.push_back(a1_kin.fk(_phi_1.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
+    //     // calculate jacobian of each leg
+    //     Ji.push_back(a1_kin.jac(_phi_0.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
+    //     Jip1.push_back(a1_kin.jac(_phi_1.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
 
-        // calculate vm
-        vi.push_back(-R_br * Ji[j] * _dphi_0.segment<3>(3 * j) - R_w_0_x * (p_br + R_br * fi[j]));
-        vip1.push_back(-R_br * Jip1[j] * _dphi_1.segment<3>(3 * j) - R_w_1_x * (p_br + R_br * fip1[j]));
+    //     // calculate vm
+    //     vi.push_back(-R_br * Ji[j] * _dphi_0.segment<3>(3 * j) - R_w_0_x * (p_br + R_br * fi[j]));
+    //     vip1.push_back(-R_br * Jip1[j] * _dphi_1.segment<3>(3 * j) - R_w_1_x * (p_br + R_br * fip1[j]));
 
-        result_delta_epsilon[j] = delta_epsilon[j] + 0.5 * (delta_q * vi[j] + result_delta_q * vip1[j]) * _dt;
-        result_linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j) = linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j);
-    }
+    //     result_delta_epsilon[j] = delta_epsilon[j] + 0.5 * (delta_q * vi[j] + result_delta_q * vip1[j]) * _dt;
+    //     result_linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j) = linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j);
+    // }
+
+    // std::cout << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl;
+
 
     // debug: record all four lo velocities, examine their difference to average
     // only choose the most accurate two

@@ -4,6 +4,33 @@
 
 #include "A1Kinematics.h"
 
+A1Kinematics::A1Kinematics()
+{
+    fk_gen = casadi::external("fk", "/home/EstimationUser/estimation_ws/src/Cerberus/src/codegen_fk/shared/fk.so");
+    J_gen = casadi::external("J", "/home/EstimationUser/estimation_ws/src/Cerberus/src/codegen_fk/shared/J.so");
+    dfk_drho_gen = casadi::external("dfk_drho", "/home/EstimationUser/estimation_ws/src/Cerberus/src/codegen_fk/shared/dfk_drho.so");
+    dJ_dq_gen = casadi::external("dJ_dq", "/home/EstimationUser/estimation_ws/src/Cerberus/src/codegen_fk/shared/dJ_dq.so");
+    dJ_drho_gen = casadi::external("dJ_drho", "/home/EstimationUser/estimation_ws/src/Cerberus/src/codegen_fk/shared/dJ_drho.so");
+}
+
+Eigen::Matrix A1Kinematics::fk_mine(const Ref<const Vector_dof> &q, const Ref<const Vector_rho> &rho)
+{
+    std::vector<double> q_vec;
+    q_vec.resize(q.size());
+    Eigen::Matrix<double, NUM_OF_DOF, 1>::Map(&q_vec[0], q.size()) = q;
+
+    std::vector<double> rho_vec;
+    rho_vec.resize(rho.size());
+    Eigen::Matrix<double, NUM_OF_LEG, 1>::Map(&rho_vec[0], rho.size()) = rho;
+
+    std::vector<casadi::DM> arg = {casadi::DM(q_vec), casadi::DM(rho_vec)};
+    auto fk_gen_value = a1_kin.fk_gen(arg);
+
+    auto mtx = Eigen::Matrix<double, NUM_OF_LEG, 3>::Map(res_vec.data(), res_vec.size());
+
+    return mtx;
+}
+
 Eigen::Vector3d A1Kinematics::fk(Eigen::Vector3d q, Eigen::VectorXd rho_opt, Eigen::VectorXd rho_fix)
 {
     Eigen::Vector3d out;
