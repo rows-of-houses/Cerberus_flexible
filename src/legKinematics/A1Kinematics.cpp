@@ -44,18 +44,16 @@ void A1Kinematics::cookArgs(const Vector_dof &q, const Vector_rho &rho, std::vec
     return;
 }
 
-
-void A1Kinematics::casadiDMToEigen(const std::vector<casadi::DM> & src, std::vector<Eigen::MatrixXd> & dst)
+template <int num_legs, int rows, int cols>
+void A1Kinematics::casadiDMToEigen(const std::vector<casadi::DM> & src, std::vector<Eigen::Matrix<double, rows, cols>> & dst)
 {
     size_t const m = src.at(0).size1();
     size_t const n = src.at(0).size2();
 
-    dst.resize(src.size());
+    dst.resize(num_legs);
 
-    for (size_t k = 0; k < src.size(); ++k)
+    for (size_t k = 0; k < num_legs; ++k)
     {        
-        dst.at(k).resize(m, n);
-
         for (size_t i = 0; i < m; ++i)
         {
             for (size_t j = 0; j < n; ++j)
@@ -66,25 +64,57 @@ void A1Kinematics::casadiDMToEigen(const std::vector<casadi::DM> & src, std::vec
     }
 }
 
-std::vector<Eigen::MatrixXd> A1Kinematics::fk_mine(const Vector_dof &q, const Vector_rho &rho)
+
+std::vector<Eigen::Vector3d> A1Kinematics::fk(const Vector_dof &q, const Vector_rho &rho)
 {
     std::vector<casadi::DM> args(2);
     cookArgs(q, rho, args);
     casadi::DMVector res_casadi = fk_gen(args);
-    std::vector<Eigen::MatrixXd> res_eigen(NUM_OF_LEG);
-    casadiDMToEigen(res_casadi, res_eigen);
+    std::vector<Eigen::Vector3d> res_eigen(NUM_OF_LEG);
+    casadiDMToEigen<4, 3, 1>(res_casadi, res_eigen);
     return res_eigen;
 }
 
-std::vector<Eigen::MatrixXd> A1Kinematics::jac_mine(const Vector_dof &q, const Vector_rho &rho)
+std::vector<Eigen::Matrix3d> A1Kinematics::jac(const Vector_dof &q, const Vector_rho &rho)
 {
     std::vector<casadi::DM> args(2);
     cookArgs(q, rho, args);
     casadi::DMVector res_casadi = J_gen(args);
-    std::vector<Eigen::MatrixXd> res_eigen(NUM_OF_LEG);
-    casadiDMToEigen(res_casadi, res_eigen);
+    std::vector<Eigen::Matrix3d> res_eigen(NUM_OF_LEG);
+    casadiDMToEigen<4, 3, 3>(res_casadi, res_eigen);
     return res_eigen;
 }
+
+std::vector<Eigen::Matrix<double, 3, RHO_OPT_SIZE>> A1Kinematics::dfk_drho(const Vector_dof &q, const Vector_rho &rho)
+{
+    std::vector<casadi::DM> args(2);
+    cookArgs(q, rho, args);
+    casadi::DMVector res_casadi = dfk_drho_gen(args);
+    std::vector<Eigen::Matrix<double, 3, RHO_OPT_SIZE>> res_eigen(NUM_OF_LEG);
+    casadiDMToEigen<4, 3, RHO_OPT_SIZE>(res_casadi, res_eigen);
+    return res_eigen;
+}
+
+std::vector<Eigen::Matrix<double, 9, 3>> A1Kinematics::dJ_dq(const Vector_dof &q, const Vector_rho &rho)
+{
+    std::vector<casadi::DM> args(2);
+    cookArgs(q, rho, args);
+    casadi::DMVector res_casadi = dJ_dq_gen(args);
+    std::vector<Eigen::Matrix<double, 9, 3>> res_eigen(NUM_OF_LEG);
+    casadiDMToEigen<4, 9, 3>(res_casadi, res_eigen);
+    return res_eigen;
+}
+
+std::vector<Eigen::Matrix<double, 9, RHO_OPT_SIZE>> A1Kinematics::dJ_drho(const Vector_dof &q, const Vector_rho &rho)
+{
+    std::vector<casadi::DM> args(2);
+    cookArgs(q, rho, args);
+    casadi::DMVector res_casadi = dJ_drho_gen(args);
+    std::vector<Eigen::Matrix<double, 9, RHO_OPT_SIZE>> res_eigen(NUM_OF_LEG);
+    casadiDMToEigen<4, 9, RHO_OPT_SIZE>(res_casadi, res_eigen);
+    return res_eigen;
+}
+
 
 Eigen::Vector3d A1Kinematics::fk(Eigen::Vector3d q, Eigen::VectorXd rho_opt, Eigen::VectorXd rho_fix)
 {

@@ -230,23 +230,18 @@ void IMULegIntegrationBase::midPointIntegration(double _dt, const Vector3d &_acc
         }
     }
     
-    std::vector<Eigen::MatrixXd> fk_0 = a1_kin.fk_mine(_phi_0, linearized_rho);
-    std::vector<Eigen::MatrixXd> fk_1 = a1_kin.fk_mine(_phi_1, linearized_rho);
-
-    std::vector<Eigen::MatrixXd> jac_0 = a1_kin.jac_mine(_phi_0, linearized_rho);
-    std::vector<Eigen::MatrixXd> jac_1 = a1_kin.jac_mine(_phi_1, linearized_rho);
+    auto fk_0 = a1_kin.fk(_phi_0, linearized_rho);
+    auto fk_1 = a1_kin.fk(_phi_1, linearized_rho);
+    auto jac_0 = a1_kin.jac(_phi_0, linearized_rho);
+    auto jac_1 = a1_kin.jac(_phi_1, linearized_rho);
 
     // get velocity measurement
     for (int j = 0; j < NUM_OF_LEG; j++)
     {
-        // fi.push_back(a1_kin.fk(_phi_0.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
-        // fip1.push_back(a1_kin.fk(_phi_1.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
         fi.push_back(fk_0.at(j));
         fip1.push_back(fk_1.at(j));
 
         // calculate jacobian of each leg
-        // Ji.push_back(a1_kin.jac(_phi_0.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
-        // Jip1.push_back(a1_kin.jac(_phi_1.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
         Ji.push_back(jac_0.at(j));
         Jip1.push_back(jac_1.at(j));
 
@@ -269,14 +264,21 @@ void IMULegIntegrationBase::midPointIntegration(double _dt, const Vector3d &_acc
         lo_veocities.col(j) = lo_v;
     }
 
+    auto dfk_drho_0 = a1_kin.dfk_drho(_phi_0, linearized_rho);
+    auto dfk_drho_1 = a1_kin.dfk_drho(_phi_1, linearized_rho);
+    auto dJ_drho_0 = a1_kin.dJ_drho(_phi_0, linearized_rho);
+    auto dJ_drho_1 = a1_kin.dJ_drho(_phi_1, linearized_rho);
+    auto dJ_dq_0 = a1_kin.dJ_dq(_phi_0, linearized_rho);
+    auto dJ_dq_1 = a1_kin.dJ_dq(_phi_1, linearized_rho);
+
     // calculate gi, hi - the kappa and eta in paper
     for (int j = 0; j < NUM_OF_LEG; j++)
     {
         // calculate derivative of fk wrt rho
-        dfdrhoi.push_back(a1_kin.dfk_drho(_phi_0.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
-        dfdrhoip1.push_back(a1_kin.dfk_drho(_phi_1.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]));
+        dfdrhoi.push_back(dfk_drho_0.at(j));
+        dfdrhoip1.push_back(dfk_drho_1.at(j));
         // calculate g
-        Eigen::Matrix<double, 9, RHO_OPT_SIZE> dJdrho0 = a1_kin.dJ_drho(_phi_0.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]);
+        Eigen::Matrix<double, 9, RHO_OPT_SIZE> dJdrho0 = dJ_drho_0.at(j);
         Eigen::Matrix<double, 3, 9> kron_dphi0;
         kron_dphi0.setZero();
         kron_dphi0(0, 0) = kron_dphi0(1, 1) = kron_dphi0(2, 2) = _dphi_0(0 + 3 * j);
@@ -284,7 +286,7 @@ void IMULegIntegrationBase::midPointIntegration(double _dt, const Vector3d &_acc
         kron_dphi0(0, 6) = kron_dphi0(1, 7) = kron_dphi0(2, 8) = _dphi_0(2 + 3 * j);
         gi.push_back(-delta_q.toRotationMatrix() * (R_br * kron_dphi0 * dJdrho0 + R_w_0_x * R_br * dfdrhoi[j]));
 
-        Eigen::Matrix<double, 9, RHO_OPT_SIZE> dJdrho1 = a1_kin.dJ_drho(_phi_1.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]);
+        Eigen::Matrix<double, 9, RHO_OPT_SIZE> dJdrho1 = dJ_drho_1.at(j);
         Eigen::Matrix<double, 3, 9> kron_dphi1;
         kron_dphi1.setZero();
         kron_dphi1(0, 0) = kron_dphi1(1, 1) = kron_dphi1(2, 2) = _dphi_1(0 + 3 * j);
@@ -293,9 +295,9 @@ void IMULegIntegrationBase::midPointIntegration(double _dt, const Vector3d &_acc
         gip1.push_back(-result_delta_q.toRotationMatrix() * (R_br * kron_dphi1 * dJdrho1 + R_w_1_x * R_br * dfdrhoip1[j]));
 
         // calculate h
-        Eigen::Matrix<double, 9, 3> dJdphi0 = a1_kin.dJ_dq(_phi_0.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]);
+        Eigen::Matrix<double, 9, 3> dJdphi0 = dJ_dq_0.at(j);
         hi.push_back(delta_q.toRotationMatrix() * (R_br * kron_dphi0 * dJdphi0 + R_w_0_x * R_br * Ji[j]));
-        Eigen::Matrix<double, 9, 3> dJdphi1 = a1_kin.dJ_dq(_phi_1.segment<3>(3 * j), linearized_rho.segment<RHO_OPT_SIZE>(RHO_OPT_SIZE * j), rho_fix_list[j]);
+        Eigen::Matrix<double, 9, 3> dJdphi1 = dJ_dq_1.at(j);
         hip1.push_back(result_delta_q.toRotationMatrix() * (R_br * kron_dphi1 * dJdphi1 + R_w_1_x * R_br * Jip1[j]));
     }
     Vector12d uncertainties;
