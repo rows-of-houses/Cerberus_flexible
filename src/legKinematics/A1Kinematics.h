@@ -8,6 +8,7 @@
 #include "../utils/parameters.h"
 #include <eigen3/Eigen/Dense>
 #include <casadi/casadi.hpp>
+// #include <dlfcn.h>
 
 class A1Kinematics
 {
@@ -31,7 +32,40 @@ public:
     Eigen::Matrix<double, 9, RHO_OPT_SIZE> dJ_drho(Eigen::Vector3d q, Eigen::VectorXd rho_opt, Eigen::VectorXd rho_fix);
 
 
-    Eigen::Matrix<double, NUM_OF_LEG, 3> fk_mine(const Ref<const Vector_dof> &q, const Ref<const Vector_rho> &rho);
+    std::vector<Eigen::MatrixXd> fk_mine(const Vector_dof &q, const Vector_rho &rho);
+    std::vector<Eigen::MatrixXd> jac_mine(const Vector_dof &q, const Vector_rho &rho);
+
+
+    // // Copy casadi matrix to Eigen matrix
+    //  static inline void casadiDMToEigen(casadi::DM const & src, Eigen::MatrixXd & dst)
+    //  {
+    //    size_t const m = src.size1();
+    //    size_t const n = src.size2();
+       
+    //    dst.resize(m, n);
+       
+    //    for (size_t i = 0; i < m; ++i)
+    //    {
+    //      for (size_t j = 0; j < n; ++j)
+    //      {
+    //        dst(i, j) = static_cast<double>(src(i, j));
+    //      }
+    //    }
+    //  }
+
+     
+    // // Copy Eigen matrix to casadi matrix
+    // inline void copy(Eigen::MatrixBase<double> const & src, casadi::Matrix<casadi::DM> & dst)
+    //  {
+    //    Eigen::DenseIndex const m = src.rows();
+    //    Eigen::DenseIndex const n = src.cols();
+       
+    //    dst.resize(m, n);
+       
+    //    for (Eigen::DenseIndex i = 0; i < m; ++i)
+    //      for (Eigen::DenseIndex j = 0; j < n; ++j)
+    //        dst(i, j) = src(i, j);
+    //  }
 
 
 private:
@@ -41,6 +75,10 @@ private:
     void autoFunc_d_fk_drho(const double in1[3], const double in2[RHO_OPT_SIZE], const double in3[RHO_FIX_SIZE], double d_fk_drho[D_FK_DRHO_SIZE]);
     void autoFunc_dJ_dt(const double in1[3], const double in2[RHO_OPT_SIZE], const double in3[RHO_FIX_SIZE], double dJ_dq[27]);
     void autoFunc_dJ_drho(const double in1[3], const double in2[RHO_OPT_SIZE], const double in3[RHO_FIX_SIZE], double dJ_drho[D_J_DRHO_SIZE]);
+
+    static inline std::vector<casadi::DM> cookArgs(const Vector_dof &q, const Vector_rho &rho);
+    static inline void cookArgs(const Vector_dof &q, const Vector_rho &rho, std::vector<casadi::DM>& arg);
+    static inline void casadiDMToEigen(const std::vector<casadi::DM> & src, std::vector<Eigen::MatrixXd> & dst);
 
     casadi::Function fk_gen;
     casadi::Function J_gen;

@@ -51,16 +51,16 @@ extern "C" {
 
 static const casadi_int casadi_s0[16] = {12, 1, 0, 12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 static const casadi_int casadi_s1[8] = {4, 1, 0, 4, 0, 1, 2, 3};
-static const casadi_int casadi_s2[20] = {1, 9, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0};
+static const casadi_int casadi_s2[14] = {3, 3, 0, 2, 5, 8, 1, 2, 0, 1, 2, 0, 1, 2};
 
-/* J:(i0[12],i1[4])->(o0[1x9,8nz],o1[1x9,8nz],o2[1x9,8nz],o3[1x9,8nz]) */
+/* J:(i0[12],i1[4])->(o0[3x3,8nz],o1[3x3,8nz],o2[3x3,8nz],o3[3x3,8nz]) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem) {
   casadi_real a0, a1, a10, a11, a12, a13, a14, a15, a2, a3, a4, a5, a6, a7, a8, a9;
   a0=8.3799999999999999e-02;
   a1=arg[0]? arg[0][0] : 0;
   a2=sin(a1);
   a3=(a0*a2);
-  a4=-2.0000000000000001e-01;
+  a4=-2.0999999999999999e-01;
   a5=arg[0]? arg[0][1] : 0;
   a6=cos(a5);
   a7=cos(a1);

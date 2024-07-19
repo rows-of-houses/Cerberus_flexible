@@ -4,7 +4,7 @@
 
 	"runArgs": [
 		"--network=host",
-		"--runtime=nvidia",             // for GPU, if you don't have GPU, comment this line
+		// "--runtime=nvidia",             // for GPU, if you don't have GPU, comment this line
 		"--privileged",
 		"--cap-add=IPC_LOCK",
 		"--cap-add=sys_nice",

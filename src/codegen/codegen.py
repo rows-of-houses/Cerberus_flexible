@@ -5,6 +5,11 @@ import pinocchio.casadi as cpin
 import os
 
 
+### SETTINGS ###
+urdf_filename = "/home/dmitry/Documents/unitree_ros/robots/a1_description/urdf/a1.urdf"
+leg_frames = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
+
+
 ### DEBUG FUNCTIONS ###
 def get_parent_joints(cmodel, frame_index):
     '''
@@ -25,25 +30,28 @@ def get_frame_names(cmodel):
     return [(i, frame.name) for i, frame in enumerate(cmodel.frames.tolist())]
 
 
-### SETTINGS ###
-urdf_filename = "/home/dmitry/Documents/unitree_ros/robots/a1_description/urdf/a1.urdf"
-leg_frames = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
-
-
 model = pin.buildModelFromUrdf(urdf_filename)
+
+# adjusting parameters to make functions give the same values as initial ones.
+# IDK why but ShuoYang used wrond kinematic parameters.
+for i, leg_frame in enumerate(leg_frames):
+    frame_id = model.getFrameId(leg_frame)
+    joint_id = model.frames[frame_id].parentJoint    
+    model.jointPlacements[joint_id].translation[2] = -0.21 # initially in URDF it is -0.20
+
 cmodel = cpin.Model(model)
 cdata = cmodel.createData()
 
 rhos = cs.SX.sym("rhos", len(leg_frames)) # optimizable kinematic parameters
 cq = cs.SX.sym("joints", cmodel.nq) #joint angles
 
+# setting symbolic displacements for frames
 for i, leg_frame in enumerate(leg_frames):
-    
     frame_id = model.getFrameId(leg_frame)
     trans = cs.SX.zeros(3)
     trans[2] = -rhos[i]
     
-    cmodel.frames[frame_id].placement.translation = trans
+    cmodel.frames[frame_id].placement.translation = trans    
     
 cpin.forwardKinematics(cmodel, cdata, cq)
 
@@ -59,9 +67,9 @@ for i, leg_frame in enumerate(leg_frames):
     parent_joints = get_parent_joints(cmodel, frame_id)
 
     fk = cpin.updateFramePlacement(cmodel, cdata, frame_id).translation
-    jac = cs.jacobian(cpin.updateFramePlacement(cmodel, cdata, frame_id).translation, cq[parent_joints]).reshape((1, -1))
+    jac = cs.jacobian(cpin.updateFramePlacement(cmodel, cdata, frame_id).translation, cq[parent_joints])
     dfk_drho = cs.jacobian(cpin.updateFramePlacement(cmodel, cdata, frame_id).translation, rhos[i])
-    dJ_dq = cs.jacobian(jac, cq[parent_joints]).reshape((1, -1))
+    dJ_dq = cs.jacobian(jac, cq[parent_joints])
     dJ_drho = cs.jacobian(jac, rhos[i])
     
     fk_list.append(fk)
@@ -90,8 +98,8 @@ dJ_drho_function = cs.Function("dJ_drho", \
                         [cq, rhos], \
                         dJ_drho_list)
 
-os.mkdir("src")
-os.mkdir("shared")
+os.makedirs("src", exist_ok=True)
+os.makedirs("shared", exist_ok=True)
 
 os.chdir("src")
 
@@ -101,8 +109,8 @@ dfk_drho_function.generate()
 dJ_dq_function.generate()
 dJ_drho_function.generate()
 
-os.system('gcc -fPIC -shared fk.c -o ../shared/fk.so')
-os.system('gcc -fPIC -shared J.c -o ../shared/J.so')
-os.system('gcc -fPIC -shared dfk_drho.c -o ../shared/dfk_drho.so')
-os.system('gcc -fPIC -shared dJ_dq.c -o ../shared/dJ_dq.so')
-os.system('gcc -fPIC -shared dJ_drho.c -o ../shared/dJ_drho.so')
+os.system('gcc -fPIC -O3 -shared fk.c -o ../shared/fk.so')
+os.system('gcc -fPIC -O3 -shared J.c -o ../shared/J.so')
+os.system('gcc -fPIC -O3 -shared dfk_drho.c -o ../shared/dfk_drho.so')
+os.system('gcc -fPIC -O3 -shared dJ_dq.c -o ../shared/dJ_dq.so')
+os.system('gcc -fPIC -O3 -shared dJ_drho.c -o ../shared/dJ_drho.so')
