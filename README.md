@@ -21,7 +21,7 @@ Here are two videos comparing the performance of the Cerberus VILO and the VINS-
 ## Installation
 git clone the repo (remember to initialize submodules):
 ```shell
-git clone --recurse-submodules git@github.com:ShuoYangRobotics/Cerberus.git
+git clone --recurse-submodules git@github.com:rows-of-houses/Cerberus_flexible.git
 ```
 
 Use Docker and VSCode ''Remote - Containers''. A **devcontainer.json** that configures the development environment is shown in .devcontainer folder. If you have Nvidia GPU on your computer this file will autmatically setup the docker container to use GPU (so you can open rviz inside docker). If not, you need to comment out devcontainer.json line 7.
