@@ -68,18 +68,19 @@ add_library(vilo_lib
     src/initial/initial_sfm.cpp
     src/initial/initial_ex_rotation.cpp
     src/factor/imu_leg_factor.cpp src/factor/imu_leg_factor.h src/factor/imu_leg_integration_base.cpp src/factor/imu_leg_integration_base.h
+
+    src/kf/A1KFCombineLOWithFoot.cpp
+    src/kf/A1KFCombineLOWithFoot.h
+    src/kf/A1KF.hpp
+    src/kf/filter.hpp
 )
 
 
-# kf subdirectory
-add_subdirectory(src/kalmanFilter)
-
-target_link_libraries(vilo_lib ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES} casadi)
+target_link_libraries(vilo_lib ${catkin_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES} casadi gram_savitzky_golay::gram_savitzky_golay)
 
 add_executable(vilo src/main.cpp )
 target_link_libraries(vilo 
     vilo_lib
-    kf_lib
     casadi
     gram_savitzky_golay::gram_savitzky_golay
 )

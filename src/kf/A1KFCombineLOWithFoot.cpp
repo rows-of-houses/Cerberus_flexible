@@ -261,10 +261,10 @@ void A1KFCombineLOWithFoot::update_filter_with_opti(A1SensorData data)
 void A1KFCombineLOWithFoot::load_casadi_functions()
 {
     // load casadi functions
-    process_func = casadi::external("process", "/tmp/casadi_kf_baseline3_process.so");
-    process_jac_func = casadi::external("process_jac", "/tmp/casadi_kf_baseline3_process_jac.so");
-    measure_func = casadi::external("meas", "/tmp/casadi_kf_baseline3_meas.so");
-    measure_jac_func = casadi::external("meas_jac", "/tmp/casadi_kf_baseline3_meas_jac.so");
+    process_func = casadi::external("process", "/home/EstimationUser/estimation_ws/src/Cerberus/src/codegen/shared/process.so");
+    process_jac_func = casadi::external("process_jac", "/home/EstimationUser/estimation_ws/src/Cerberus/src/codegen/shared/process_jac.so");
+    measure_func = casadi::external("meas", "/home/EstimationUser/estimation_ws/src/Cerberus/src/codegen/shared/meas.so");
+    measure_jac_func = casadi::external("meas_jac", "/home/EstimationUser/estimation_ws/src/Cerberus/src/codegen/shared/meas_jac.so");
 }
 
 void A1KFCombineLOWithFoot::process(Eigen::Matrix<double, EKF_STATE_SIZE, 1> state,

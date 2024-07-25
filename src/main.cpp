@@ -29,7 +29,7 @@
 #include "utils/parameters.h"
 #include "utils/visualization.h"
 
-#include "kalmanFilter/A1KFCombineLOWithFoot.h"
+#include "kf/A1KFCombineLOWithFoot.h"
 
 // global variables
 Estimator estimator;
